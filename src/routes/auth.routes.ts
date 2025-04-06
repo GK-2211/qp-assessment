@@ -8,4 +8,4 @@ router.post('/signup', authController.signup);
 router.post('/login', authController.login);
 router.post('/admin/create', authController.createAdmin);
 
-export { router as authRouter };
+export { router as authRouter }; 
