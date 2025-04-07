@@ -2,22 +2,26 @@ import { Request, Response } from 'express';
 import { User } from '../types/index';
 import pool from '../config/db';
 
+interface UserRequest extends Request {
+    user?: User;
+  }
+
 export class UserController {
   async getAvailableGroceryItems(req: Request, res: Response) {
     try {
-      const result = await pool.query('SELECT * FROM grocery_items WHERE inventory > 0');
+      const result = await pool.query('SELECT * FROM grocery_items WHERE inventory > 0 AND is_deleted = false');
       res.json(result.rows);
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch grocery items' });
     }
   }
 
-  async createOrder(req: Request, res: Response) {
+  async createOrder(req: UserRequest, res: Response) {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
       const { items } = req.body;
-      const userId = (req as any).user?.id;
+      const userId = req.user?.id;
 
       const orderResult = await client.query(
         'INSERT INTO orders (user_id, status) VALUES ($1, $2) RETURNING id',
@@ -30,9 +34,13 @@ export class UserController {
         const { grocery_id, quantity } = item;
         
         const inventoryResult = await client.query(
-          'SELECT price, inventory FROM grocery_items WHERE id = $1 FOR UPDATE',
+          'SELECT price, inventory FROM grocery_items WHERE id = $1 AND is_deleted = false FOR UPDATE',
           [grocery_id]
         );
+
+        if (inventoryResult.rows.length === 0) {
+          throw new Error(`Grocery item with ID ${grocery_id} is not available`);
+        }
 
         if (inventoryResult.rows[0].inventory < quantity) {
           throw new Error('Insufficient inventory');

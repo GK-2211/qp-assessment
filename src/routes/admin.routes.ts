@@ -1,11 +1,15 @@
 import { Router } from 'express';
-import { AuthController } from '../controllers/auth.controller';
+import { AdminController } from '../controllers/admin.controller';
+import { authenticateToken, isAdmin } from '../middleware/auth.middleware';
 
 const router = Router();
-const authController = new AuthController();
+const adminController = new AdminController();
 
-router.post('/signup', authController.signup);
-router.post('/login', authController.login);
-router.post('/admin/create', authController.createAdmin);
+router.use(authenticateToken, isAdmin);
 
-export { router as authRouter };
+router.post('/grocery', adminController.addGroceryItem);
+router.get('/grocery', adminController.getGroceryItems);
+router.post('/update/grocery/', adminController.updateGroceryItem);
+router.delete('/grocery/:id', adminController.deleteGroceryItem);
+
+export { router as adminRouter };
