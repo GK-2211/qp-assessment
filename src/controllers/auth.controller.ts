@@ -65,11 +65,7 @@ export class AuthController {
 
   async createAdmin(req: Request, res: Response) {
     try {
-      const { email, password, adminSecret } = req.body;
-
-      if (adminSecret !== process.env.ADMIN_SECRET) {
-        return res.status(403).json({ message: 'Invalid admin creation secret' });
-      }
+      const { email, password } = req.body;
 
       const adminExists = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
       if (adminExists.rows.length > 0) {
